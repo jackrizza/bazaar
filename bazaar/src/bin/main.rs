@@ -3,12 +3,17 @@ use p2p::Event;
 use patron::Patron;
 use rand::Rng; // 0.8
 use rand::distr::Alphanumeric;
+use env_logger;
+use log::{debug, error, info, log_enabled, warn, Level};
 
 #[tokio::main]
 async fn main() {
+
+    env_logger::init();
+
     let mut patron = match Patron::serve().await {
         Ok(patron) => patron,
-        Err(e) => return eprintln!("Error: {:?}", e),
+        Err(e) => return error!("Error: {:?}", e),
     };
 
     loop {
@@ -16,7 +21,7 @@ async fn main() {
             Some(event) => match event {
                 Event::Mdns(mdns::Event::Discovered(list)) => {
                     for (peer_id, addr) in list {
-                        println!("Discovered: {:?} at {:?}", peer_id, addr);
+                        info!("Discovered: {:?} at {:?}", peer_id, addr);
 
                         match patron.send_message(
                             rand::rng()
@@ -25,14 +30,14 @@ async fn main() {
                                 .map(char::from)
                                 .collect(),
                         ) {
-                            Ok(_) => println!("message sent"),
-                            Err(e) => eprintln!("Error: {:?}", e),
+                            Ok(_) => info!("message sent"),
+                            Err(e) => error!("Error: {:?}", e),
                         };
                     }
                 }
                 Event::Mdns(mdns::Event::Expired(list)) => {
                     for (peer_id, addr) in list {
-                        println!("Expired: {:?} at {:?}", peer_id, addr);
+                        warn!("Expired: {:?} at {:?}", peer_id, addr);
                     }
                 }
                 Event::Gossipsub(gossipsub::Event::Message {
@@ -40,14 +45,14 @@ async fn main() {
                     message_id,
                     message,
                 }) => {
-                    println!(
+                    info!(
                         "Message from {:?} with id {:?}: {:?}",
                         propagation_source, message_id, message
                     );
                 }
                 _ => {}
             },
-            None => break,
+            None => {},
         }
     }
 }

@@ -15,6 +15,9 @@ use libp2p::{
 };
 use tokio::io::{self};
 
+use env_logger;
+use log::{Level, debug, error, info, log_enabled, warn};
+
 // Define a unified event type for our behaviour.
 #[derive(Debug)]
 pub enum Event {
@@ -92,24 +95,21 @@ where
         let (event_tx, event_rx) = mpsc::channel::<Event>(32);
 
         // Create and subscribe to the Gossipsub topic.
-        let topic = gossipsub::IdentTopic::new(topic);
+        let t = gossipsub::IdentTopic::new(topic);
         self.swarm
             .behaviour_mut()
             .get_mut_gossipsub()
-            .subscribe(&topic)?;
+            .subscribe(&t)?;
 
         // Listen on both QUIC and TCP addresses.
-        self.swarm
-            .listen_on("/ip4/0.0.0.0/udp/0/quic-v1".parse()?)?;
-        self.swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
+        self.swarm.listen_on("/ip6/::/udp/0/quic-v1".parse()?)?;
+        self.swarm.listen_on("/ip6/::/tcp/0".parse()?)?;
 
-        println!("P2P node started. Use the provided channel to send messages and receive events.");
+        info!("P2P node started. Use the provided channel to send messages and receive events.");
 
         // Spawn the event loop in a background task.
         let mut swarm = self.swarm;
-        tokio::spawn(
-            async move { Self::loop_input(&mut swarm, topic, publish_rx, event_tx).await },
-        );
+        tokio::spawn(async move { Self::loop_input(&mut swarm, t, publish_rx, event_tx).await });
 
         Ok((publish_tx, event_rx))
     }
@@ -168,8 +168,9 @@ where
                 // Process messages received via the publish channel.
                 maybe_msg = publish_rx.recv() => {
                     if let Some(msg) = maybe_msg {
+                        info!("Publishing message: {:?}", msg);
                         if let Err(e) = swarm.behaviour_mut().get_mut_gossipsub().publish(topic.clone(), msg.as_bytes()) {
-                            eprintln!("Publish error: {:?}", e);
+                            error!("Publish error: {:?}", e);
                         }
                     }
                 }
@@ -206,7 +207,7 @@ where
                             ).await;
                         },
                         SwarmEvent::NewListenAddr { address, .. } => {
-                            println!("Local node is listening on {}", address);
+                            info!("Local node is listening on {}", address);
                         }
                         _ => {}
                     }

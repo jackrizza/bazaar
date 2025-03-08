@@ -1,6 +1,9 @@
 use libp2p::Swarm;
 use tokio::sync::mpsc;
 
+use env_logger;
+use log::{debug, error, info, log_enabled, warn, Level};
+
 use p2p::{CoreBehaviour, Event, P2P};
 
 // We create a custom network behaviour that combines Gossipsub and Mdns.

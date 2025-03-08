@@ -20,3 +20,5 @@ tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 
 database = {path = "../database"}
 p2p = {path = "../p2p"}
+env_logger = "0.11.6"
+log = "0.4.26"

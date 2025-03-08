@@ -1,0 +1,4 @@
+[workspace]
+members = ["bazaar", "stalls", "patron", "database", "p2p"]
+resolver = "3"
+

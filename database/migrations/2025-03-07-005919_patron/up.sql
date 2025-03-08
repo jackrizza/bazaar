@@ -1,0 +1,6 @@
+-- Your SQL goes here
+CREATE TABLE patrons (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  peer_id VARCHAR NOT NULL,
+  public_key VARCHAR NOT NULL
+)
